@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Attendance Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f4f8;
+            margin: 0;
+            padding: 24px;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 24px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px #00000018;
+        }
+        h1, h2 { color: #1d3557; }
+        h1 { text-align: center; }
+        label { display: inline-block; margin: 8px 4px; }
+        input, select, button {
+            padding: 10px;
+            margin: 5px 4px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background: #0077b6;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover { background: #023e8a; }
+        table {
+            width: 100%;
+            margin-top: 16px;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th { background: #1d3557; color: white; }
+        .summary {
+            margin-top: 20px;
+            padding: 14px;
+            background: #e8f4fd;
+            border-radius: 6px;
+        }
+        @media (max-width: 650px) {
+            body { padding: 8px; }
+            .container { padding: 12px; overflow-x: auto; }
+            table { min-width: 560px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <h1>Student Attendance Management System</h1>
+
+        <h2>Add Student Details</h2>
+        <form id="studentForm">
+            <label for="roll">Roll Number:</label>
+            <input type="text" id="roll" required>
+
+            <label for="name">Student Name:</label>
+            <input type="text" id="name" required>
+
+            <label for="date">Date:</label>
+            <input type="date" id="date" required>
+
+            <label for="attendance">Attendance:</label>
+            <select id="attendance">
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+            </select>
+
+            <button type="submit">Add Student</button>
+        </form>
+
+        <h2>Attendance Records</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Roll Number</th>
+                    <th>Student Name</th>
+                    <th>Date</th>
+                    <th>Attendance</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="studentList"></tbody>
+        </table>
+
+        <div class="summary">
+            <h2>Attendance Summary</h2>
+            <p>Total Records: <span id="total">0</span></p>
+            <p>Present: <span id="presentCount">0</span></p>
+            <p>Absent: <span id="absentCount">0</span></p>
+        </div>
+    </main>
+
+    <script>
+        const form = document.getElementById("studentForm");
+        const studentList = document.getElementById("studentList");
+        const recordsKey = "studentAttendanceRecords";
+        let records = JSON.parse(localStorage.getItem(recordsKey) || "[]");
+
+        document.getElementById("date").value =
+            new Date().toLocaleDateString("en-CA");
+
+        function saveRecords() {
+            localStorage.setItem(recordsKey, JSON.stringify(records));
+        }
+
+        function renderRecords() {
+            studentList.innerHTML = "";
+
+            records.forEach((record, index) => {
+                const row = studentList.insertRow();
+                [record.roll, record.name, record.date, record.status].forEach(value => {
+                    row.insertCell().textContent = value;
+                });
+
+                const actionCell = row.insertCell();
+                const removeButton = document.createElement("button");
+                removeButton.textContent = "Remove";
+                removeButton.type = "button";
+                removeButton.addEventListener("click", () => {
+                    records.splice(index, 1);
+                    saveRecords();
+                    renderRecords();
+                });
+                actionCell.appendChild(removeButton);
+            });
+
+            document.getElementById("total").textContent = records.length;
+            document.getElementById("presentCount").textContent =
+                records.filter(record => record.status === "Present").length;
+            document.getElementById("absentCount").textContent =
+                records.filter(record => record.status === "Absent").length;
+        }
+
+        form.addEventListener("submit", event => {
+            event.preventDefault();
+
+            const roll = document.getElementById("roll").value.trim();
+            const name = document.getElementById("name").value.trim();
+            const date = document.getElementById("date").value;
+            const status = document.getElementById("attendance").value;
+
+            if (!roll || !name || !date) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            const duplicate = records.some(record =>
+                record.roll.toLowerCase() === roll.toLowerCase() &&
+                record.date === date
+            );
+
+            if (duplicate) {
+                alert("Attendance for this roll number and date already exists.");
+                return;
+            }
+
+            records.push({ roll, name, date, status });
+            saveRecords();
+            renderRecords();
+            form.reset();
+            document.getElementById("date").value =
+                new Date().toLocaleDateString("en-CA");
+        });
+
+        renderRecords();
+    </script>
+</body>
+</html>
